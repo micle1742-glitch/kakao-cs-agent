@@ -1,0 +1,10 @@
+.env*
+!.env.example
+*.db
+*.db-*
+logs/
+test_results/
+knowledge/
+__pycache__/
+.venv/
+*.log

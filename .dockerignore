@@ -1,0 +1,15 @@
+# 비밀값은 이미지에 넣지 않음 — 플랫폼 환경변수로
+.env
+.venv/
+__pycache__/
+*.pyc
+*.log
+state.db*
+test_results/
+test_tc.py
+knowledge/tc/
+*.zip
+*.png
+*.jpg
+*.jpeg
+*.xlsx

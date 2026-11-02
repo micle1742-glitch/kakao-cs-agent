@@ -1,0 +1,18 @@
+# Fly.io 설정 — 항상 켜진 워커 1대. app 이름은 `fly launch --no-deploy` 때 정한 값으로 바꾼다.
+app = "kakao-cs-bot"
+primary_region = "nrt"
+
+[build]
+  dockerfile = "Dockerfile"
+
+# 웹 서비스가 아니므로 [http_service]를 두지 않는다 → 요청이 없어도 자동으로 멈추지 않음
+
+# 대화 기록 DB와 로그 (state.db, usage.log, api_usage.log, events.log)
+[mounts]
+  source = "bot_data"
+  destination = "/data"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"
