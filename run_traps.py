@@ -167,7 +167,7 @@ async def run_case(tc, rep, args):
         handler.REPLY_DEADLINE = old_deadline
     all_replies = [r for rs in turn_replies for r in rs]
     checks += scoring.check(tc.get("expect") or {}, all_replies, api.calls, "케이스")
-    checks += scoring.basic_checks(turn_replies)
+    checks += scoring.basic_checks(turn_replies, api.calls)
     if scripted:
         checks += scripted.checks
     return {
@@ -175,7 +175,7 @@ async def run_case(tc, rep, args):
         "passed": all(ok for ok, _ in checks),
         "checks": [{"ok": ok, "desc": d} for ok, d in checks],
         "transcript": [{"customer": t["customer"], "bot": r} for t, r in zip(tc["turns"], turn_replies)],
-        "calls": [{k: c[k] for k in ("tool", "key", "params", "body", "status")} for c in api.calls],
+        "calls": [{k: c[k] for k in ("tool", "key", "params", "body", "status", "data")} for c in api.calls],
         "seconds": seconds,
     }
 

@@ -141,21 +141,37 @@ async def force(user_key, tc_id, why, customer_text):
     return receipt
 
 
-async def ensure(reply, *, user_key, tc_id, case_info, customer_text, forced_receipt=None):
-    """답이 이관을 말하는데 접수번호가 없으면 접수번호(필요하면 새 이관)와 회신 날짜를 붙인다.
+async def ensure(reply, *, user_key, tc_id, case_info, customer_text, forced_receipt=None, this_turn=None):
+    """답의 이관 안내가 실제 기록과 맞게 고친다.
 
-    접수번호는 있는데 회신 날짜가 없으면 날짜만 붙인다 (절차서: 회신 날짜를 반드시 안내).
+    1. 답에 기록에 없는 접수번호가 있으면(모델이 지어냄 — 문서 예시 번호를 베끼는 일이 실제로 있었다)
+       실제 이관 번호로 바꾼다. 이번 턴에 한 이관이 없으면 새로 접수한다.
+    2. 이관을 말하는데 접수번호가 없으면 접수번호(필요하면 새 이관)와 회신 날짜를 붙인다.
+    3. 접수번호는 있는데 회신 날짜가 없으면 날짜만 붙인다 (절차서: 회신 날짜를 반드시 안내).
+    this_turn: 이번 턴에 모델이 접수한 이관 번호.
     """
     if not reply:
         return reply
-    if RECEIPT.search(reply):
+    found = list(dict.fromkeys(RECEIPT.findall(reply)))
+    if found:
+        known = {r for _, r, _ in done_in_case(tc_id)}
+        fake = [r for r in found if r not in known]
+        if fake:
+            real = (forced_receipt or this_turn
+                    or await force(user_key, tc_id, "답변에 기록에 없는 접수번호가 있음(모델이 지어냄)", customer_text))
+            if real:
+                logger.warning("기록에 없는 접수번호 %s를 실제 번호 %s로 바꿈", fake, real)
+                for r in fake:
+                    reply = reply.replace(r, real)
+            else:
+                logger.error("기록에 없는 접수번호 %s가 답에 있으나 이관을 접수하지 못함", fake)
         deadline = deadline_text(case_info)
         if deadline and not DATE_IN_TEXT.search(reply):
             return f"{reply.rstrip()} {deadline}까지 담당자가 회신드립니다."
         return reply
     if not (forced_receipt or promises_handoff(reply)):
         return reply
-    receipt = (forced_receipt or latest_receipt(tc_id)
+    receipt = (forced_receipt or this_turn or latest_receipt(tc_id)
                or await force(user_key, tc_id, "답변에서 담당자 이관을 안내했으나 접수 기록이 없음", customer_text))
     if not receipt:
         return reply

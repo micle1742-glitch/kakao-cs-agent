@@ -105,7 +105,8 @@ async def _answer(user_key, history, message, case_info, timeout, trace):
     if not reply:
         return await fallback("답변 생성 실패")
     return await escalation.ensure(_plain(reply), user_key=user_key, tc_id=tc_id, case_info=case_info,
-                                   customer_text=customer_text, forced_receipt=forced.get("receipt"))
+                                   customer_text=customer_text, forced_receipt=forced.get("receipt"),
+                                   this_turn=this_turn_receipt())
 
 
 async def _user_message(text):

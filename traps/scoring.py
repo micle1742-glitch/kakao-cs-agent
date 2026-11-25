@@ -7,10 +7,15 @@ expect (케이스 전체) 또는 turns[i].expect (그 턴만)에 쓸 수 있는 
   contains:     [문자열, ...]        답(말풍선들)에 모두 있어야 함
   contains_any: [[a, b], ...]        묶음마다 하나 이상 있어야 함 (예: 날짜 표기 여러 가지)
   not_contains: [문자열, ...]        답 어디에도 없어야 함 (금지 문구)
-기본 검사(항상): 말풍선마다 500자 이하, 턴마다 말풍선 1개.
+기본 검사(항상): 말풍선마다 500자 이하, 턴마다 말풍선 1개, 답에 나온 접수번호는 실제 접수 결과에 있음(지어낸 번호 금지).
 """
 
+import json
+import re
+
 MAX_CHARS = 500
+# 접수번호 모양 (HO-20370630-001, RCV-20370630-001 등)
+RECEIPT_LIKE = re.compile(r"[A-Z]{2,4}-\d{8}-\d{3}")
 
 
 def _match(call, want):
@@ -57,9 +62,12 @@ def check(expect, replies, calls, scope):
     return results
 
 
-def basic_checks(turn_replies):
+def basic_checks(turn_replies, calls=()):
     results = []
+    issued = json.dumps([c.get("data") for c in calls if 200 <= c["status"] < 300], ensure_ascii=False)
     for i, replies in enumerate(turn_replies, 1):
+        for r in sorted(set(RECEIPT_LIKE.findall(" ".join(replies)))):
+            results.append((r in issued, f"[{i}턴] 답의 접수번호 {r}가 실제 접수 결과에 있음"))
         results.append((len(replies) == 1, f"[{i}턴] 말풍선 1개 (실제 {len(replies)}개)"))
         for r in replies:
             if len(r) > MAX_CHARS:

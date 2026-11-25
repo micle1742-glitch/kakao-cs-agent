@@ -25,6 +25,8 @@ class MockActionAPI:
         m = re.search(r"(\d{4})-(\d{2})-(\d{2})", received_at or "")
         self.date = "".join(m.groups()) if m else "20370101"
         self.calls = []  # [{"tool", "method", "path", "params", "body", "status", "data"}]
+        # 시작 번호 (문서 예시 번호와 겹치지 않게 바꿀 때: 겹치면 모델이 베낀 번호가 채점에서 통과해 버린다)
+        self._start = int(os.getenv("MOCK_RECEIPT_START") or "1")
         self._serial = {}
         self._routes = []
         for name, op in operations.items():
@@ -47,7 +49,7 @@ class MockActionAPI:
         elif method == "GET":
             return 404, {"error": "not found"}
         else:
-            n = self._serial[tool] = self._serial.get(tool, 0) + 1
+            n = self._serial[tool] = self._serial.get(tool, self._start - 1) + 1
             if tool == self.escalation_tool:
                 prefix = os.getenv("MOCK_ESCALATION_PREFIX") or "HO"
                 return 201, {"escalation_id": f"{prefix}-{self.date}-{n:03d}", "status": "접수"}
