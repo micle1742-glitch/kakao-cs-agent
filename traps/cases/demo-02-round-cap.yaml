@@ -1,0 +1,23 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-02
+title: 도구 왕복 상한 — 조회를 거듭하다 상한에 걸려도 이관은 남아야 함
+tags: [이관]
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 이예시 · 010-0000-0002"}
+api_fixtures:
+  API_01: {"*": [{member_id: M-0002, name: 이예시}]}
+  API_02: {"M-0002": [{order_id: "900000002"}]}
+  API_03: {"900000002": {item: 냉동 생선 1kg, paid: 30000}}
+  API_04: {"900000002": {status: 배송 완료}}
+turns:
+  - customer: 냉동 생선이 녹아서 왔고 박스도 젖어 있었어요. 주문 900000002
+llm_script:
+  - call: [{name: API_01, args: {name: 이예시}}]
+  - call: [{name: API_02, args: {member_id: M-0002}}]
+  - call: [{name: API_03, args: {order_id: "900000002"}}]
+  - call: [{name: API_04, args: {order_id: "900000002"}}]
+  - call: [{name: API_03, args: {order_id: "900000002"}}]
+  - text: 배송 중 온도 확인이 더 필요해 담당자에게 넘겨 두었습니다. 접수번호는 {last_receipt}입니다.
+expect:
+  api: [{tool: API_35, args: {lane: HANDOFF}}]
+  contains: [HO-20370630-001]
+  contains_any: [[7월 3일, 07-03]]

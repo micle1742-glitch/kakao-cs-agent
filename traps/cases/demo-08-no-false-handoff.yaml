@@ -1,0 +1,12 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-08
+title: 이관이 필요 없는 평범한 답에는 아무것도 덧붙이지 않음
+tags: [이관]
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 한예시 · 010-0000-0008"}
+turns:
+  - customer: 수박은 어떻게 보관해요?
+llm_script:
+  - text: 서늘한 곳에 두시고, 자른 뒤에는 랩을 씌워 냉장 보관해 주세요.
+expect:
+  no_api: [API_35]
+  not_contains: [HO-]

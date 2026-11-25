@@ -1,0 +1,15 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-03
+title: 답 생성 시간 초과 — 고정 문구로 끝내지 않고 이관 + 접수번호 + 회신 날짜
+tags: [이관, 실패처리]
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 박예시 · 010-0000-0003"}
+reply_deadline: 12
+turns:
+  - customer: 어제 산 과일 상자가 반쯤 물러 있어요. 환불받고 싶어요
+llm_script:
+  - hang: 60
+expect:
+  not_contains: [확인 후 다시 안내드릴게요]
+  api: [{tool: API_35}]
+  contains: [HO-20370630-001]
+  contains_any: [[7월 3일, 07-03]]

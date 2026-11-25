@@ -144,3 +144,16 @@ def record_tool_call(user_key, tc_id, name, args, result):
     _db().execute(
         "INSERT INTO tool_calls (user_key, tc_id, name, args_json, result_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         (user_key, tc_id, name, json.dumps(args, ensure_ascii=False), json.dumps(result, ensure_ascii=False), _now()))
+
+
+def load_tool_calls(tc_id):
+    """이번 케이스(TC)의 도구 호출 기록 (오래된 것부터). [{"name", "args", "result", "created_at"}].
+
+    케이스 상태(case_state)와 이관 중복 확인(escalation)이 읽는다. tc_id가 없으면 빈 목록.
+    """
+    if not tc_id:
+        return []
+    rows = _db().execute(
+        "SELECT name, args_json, result_json, created_at FROM tool_calls WHERE tc_id = ? ORDER BY id",
+        (tc_id,)).fetchall()
+    return [{"name": n, "args": json.loads(a), "result": json.loads(r), "created_at": t} for n, a, r, t in rows]

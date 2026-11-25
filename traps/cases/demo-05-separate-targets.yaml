@@ -1,0 +1,17 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-05
+title: 대상이 다른 이관은 따로 접수 (중복 방지가 과하게 막지 않음)
+tags: [이관, 중복]
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 정예시 · 010-0000-0005"}
+turns:
+  - customer: 생선 먹고 아이가 배탈이 났어요. 그리고 택배도 이틀 늦게 왔고요. 주문 900000004
+llm_script:
+  - call:
+      - {name: API_35, args: {lane: HANDOFF, target: SAFETY, priority: 높음, reason: "[SAFETY·높음] 섭취 후 이상 신고"}}
+      - {name: API_35, args: {lane: HANDOFF, target: DELIVERY, priority: 보통, reason: "[DELIVERY·보통] 배송 이틀 지연"}}
+  - text: 아이 상태가 가장 걱정됩니다. 남은 상품은 버리지 말고 보관해 주세요. 두 건 모두 담당자에게 넘겨 두었고 마지막 접수번호는 {last_receipt}, 7월 3일(금)까지 회신드립니다.
+expect:
+  api:
+    - {tool: API_35, args: {target: SAFETY, priority: 높음}}
+    - {tool: API_35, args: {target: DELIVERY}}
+  api_max: {API_35: 2}

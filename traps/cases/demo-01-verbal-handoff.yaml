@@ -1,0 +1,16 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-01
+title: 말로만 이관 — "전달하겠습니다"라고 했는데 이관 API가 없음
+tags: [이관]
+case: {received_at: "2037-06-30(화) 10:00", channel: 조합몰 1:1 채팅, account: "회원 로그인 · 김예시 · 010-0000-0001"}
+api_fixtures:
+  API_04: {"900000001": {status: 배송 중, last_scan: "2037-06-24"}}
+turns:
+  - customer: 택배가 일주일째 안 와요. 주문번호 900000001이에요
+llm_script:
+  - call: [{name: API_04, args: {order_id: "900000001"}}]
+  - text: 기다리시게 해서 죄송합니다. 배송이 멈춰 있어 담당자에게 전달하겠습니다.
+expect:
+  api: [{tool: API_35, args: {lane: HANDOFF}}]
+  contains: [HO-20370630-001]
+  contains_any: [[7월 3일, 07-03]]

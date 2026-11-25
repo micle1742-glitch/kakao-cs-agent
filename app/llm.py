@@ -303,7 +303,8 @@ def _to_contents(messages):
     return contents
 
 
-async def generate(messages, system=None, tools=None, tool_executor=None, context=None, trace=None):
+async def generate(messages, system=None, tools=None, tool_executor=None, context=None, trace=None,
+                   on_round_cap=None):
     """대화(messages)를 보내고 답변 텍스트를 반환. 실패 시 None.
 
     messages: [{"role": "user" | "assistant", "content": "...", "media": [{"mime", "data"}] (선택),
@@ -312,12 +313,19 @@ async def generate(messages, system=None, tools=None, tool_executor=None, contex
     context: 호출마다 달라지는 시스템 쪽 컨텍스트 (케이스 정보 등)
     tools / tool_executor: 도구 정의와 async (name, args) -> dict 실행 함수
     trace: 주면 이번 호출의 도구 호출·결과 Content를 차례로 담음 (대화 기록에 남겨 다음 턴에 같은 호출을 반복하지 않게)
+    on_round_cap: 도구 왕복 상한에 닿았을 때 마지막(도구 없는) 호출 전에 부르는 async () -> str | None.
+        돌려준 글(예: 시스템이 접수한 이관 번호)을 마지막 도구 결과 메시지에 덧붙여 모델이 답에 쓰게 한다.
     """
     contents = _to_contents(messages)
     if not (tools and tool_executor):
         tools = None
     try:
         for round_no in range(MAX_TOOL_ROUNDS + 1):
+            if round_no == MAX_TOOL_ROUNDS and on_round_cap and round_no > 0:
+                note = await on_round_cap()
+                if note:
+                    # 직전 도구 결과(user 역할)에 글 파트로 붙임 (trace도 같은 객체라 기록에 함께 남음)
+                    contents[-1].parts.append(types.Part(text=note))
             # 마지막 왕복은 도구 없이 지금까지의 결과로 답하게 함
             response = await _create(contents, system, tools, context, text_only=round_no == MAX_TOOL_ROUNDS)
             if not response.candidates:
