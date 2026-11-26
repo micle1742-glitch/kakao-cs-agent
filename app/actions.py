@@ -33,7 +33,7 @@ TIMEOUT = 10.0
 RETRY_STATUSES = (500, 503)
 
 POST_NOTE = " 정책 확인 후에만 호출한다. 접수는 정책 검사를 하지 않으므로, knowledge 규정으로 처리 가능 여부를 먼저 확인한 뒤 호출한다."
-NO_TC_ID = {"ok": False, "error": "테스트 케이스 ID가 없어 API를 호출하지 않았습니다. 고객에게는 확인 후 안내하겠다고 답하세요."}
+NO_TC_ID = {"ok": False, "error": "테스트 케이스 ID가 없어 API를 호출하지 않았습니다. 조회 결과 없이 결론을 단정하지 마세요."}
 
 logger = logging.getLogger("actions")
 

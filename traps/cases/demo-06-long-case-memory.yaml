@@ -1,0 +1,28 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-06
+title: 긴 상담 — 7턴째에도 1턴의 주문번호·접수번호가 LLM 입력에 남아 있어야 함
+tags: [케이스상태]
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 강예시 · 010-0000-0006"}
+api_fixtures:
+  API_04: {"900000005": {status: 집하 전}}
+turns:
+  - customer: 주문 900000005 배송지 바꾸고 싶어요. 새 주소는 예시시 예시로 12예요
+  - customer: 그럼 언제쯤 와요?
+  - customer: 받으면 보관은 어떻게 해요?
+  - customer: 선물 포장도 되나요?
+  - customer: 다음 주에 또 주문할게요
+  - customer: 쓸 수 있는 쿠폰 있어요?
+  - customer: 아까 접수번호가 뭐였죠?
+    expect:
+      contains: [RCV-20370630-001]
+llm_script:
+  - call: [{name: API_04, args: {order_id: "900000005"}}]
+  - call: [{name: API_10, args: {order_id: "900000005", address: 예시시 예시로 12}}]
+  - text: 배송지 변경을 접수했습니다. 접수번호는 {last_receipt}입니다.
+  - text: 다음 출고일에 나가면 보통 이틀 안에 도착합니다.
+  - text: 받으시면 바로 냉장 보관해 주세요.
+  - text: 선물 포장은 주문할 때 고르실 수 있어요.
+  - text: 감사합니다. 기다리고 있을게요.
+  - text: 지금 쓸 수 있는 쿠폰은 쿠폰함에서 확인하실 수 있어요.
+  - assert_input: ["900000005", "RCV-20370630-001", "이미 한 접수·이관"]
+  - text: 배송지 변경 접수번호는 {last_receipt}입니다.

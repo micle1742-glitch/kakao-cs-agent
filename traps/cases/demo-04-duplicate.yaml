@@ -1,0 +1,17 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-04
+title: 중복 이관 — 사유 문장만 바꾼 같은 대상·레인 이관은 한 번만
+tags: [이관, 중복]
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 최예시 · 010-0000-0004"}
+turns:
+  - customer: 배송지를 잘못 적었어요. 벌써 출발했나요? 주문 900000003
+  - customer: 빨리 좀 처리해 달라고 다시 전해 주세요
+    expect:
+      contains: [HO-20370630-001]
+llm_script:
+  - call: [{name: API_35, args: {lane: HANDOFF, target: DELIVERY, priority: 보통, reason: "[DELIVERY·보통] 배송지 오기재, 집하 여부 확인 요청"}}]
+  - text: 배송 담당자에게 넘겨 두었습니다. 접수번호는 {last_receipt}이고, 7월 3일(금)까지 회신드립니다.
+  - call: [{name: API_35, args: {lane: HANDOFF, target: DELIVERY, priority: 보통, reason: "[DELIVERY·보통] 고객이 신속 처리 다시 요청"}}]
+  - text: 앞서 접수한 {last_receipt} 건으로 담당자가 7월 3일(금)까지 회신드립니다.
+expect:
+  api_max: {API_35: 1}

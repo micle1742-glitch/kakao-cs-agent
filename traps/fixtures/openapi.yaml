@@ -1,0 +1,84 @@
+# 함정 회귀 테스트용 액션 API 명세 — 지어낸 예시입니다.
+# 대회 액션 API는 대회가 끝나 서버와 함께 내려갔고, 실제 명세는 공개하지 않습니다.
+# 이관 API(API_35)의 lane·target·priority 값과 접수번호 형식(HO-…)도 지어낸 것입니다.
+openapi: 3.0.3
+info:
+  title: 예시 액션 API (테스트 전용)
+  version: "0"
+paths:
+  /api/members:
+    get:
+      operationId: API_01
+      tags: [회원]
+      summary: 회원 검색 (이름·전화번호)
+      parameters:
+        - {name: name, in: query, schema: {type: string}}
+        - {name: phone, in: query, schema: {type: string}}
+  /api/members/{member_id}/orders:
+    get:
+      operationId: API_02
+      tags: [주문]
+      summary: 회원별 주문 목록
+      parameters:
+        - {name: member_id, in: path, required: true, schema: {type: string}}
+  /api/orders/{order_id}:
+    get:
+      operationId: API_03
+      tags: [주문]
+      summary: 주문 상세 (회원·결제·상품)
+      parameters:
+        - {name: order_id, in: path, required: true, schema: {type: string}}
+  /api/shipments/{order_id}:
+    get:
+      operationId: API_04
+      tags: [배송]
+      summary: 배송 조회
+      parameters:
+        - {name: order_id, in: path, required: true, schema: {type: string}}
+  /api/orders/{order_id}/address:
+    post:
+      operationId: API_10
+      tags: [배송]
+      summary: 배송지 변경 접수
+      parameters:
+        - {name: order_id, in: path, required: true, schema: {type: string}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address: {type: string}
+              required: [address]
+  /api/refunds:
+    post:
+      operationId: API_20
+      tags: [환불]
+      summary: 환불 접수
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                order_id: {type: string}
+                amount: {type: integer}
+                reason: {type: string}
+              required: [order_id, amount, reason]
+  /api/escalations:
+    post:
+      operationId: API_35
+      tags: [이관]
+      summary: 담당자 이관·클레임 접수. 접수번호를 돌려준다
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lane: {type: string, enum: [HANDOFF, CLAIM]}
+                target: {type: string, enum: [DELIVERY, PAYMENT, SAFETY, PRODUCT, GENERAL]}
+                priority: {type: string, enum: [높음, 보통]}
+                reason: {type: string, description: "맨 앞에 [대상·우선순위], 확인된 사실과 미확인 사항을 나눠 쓴다"}
+                summary: {type: string}
+              required: [lane, target, priority, reason]

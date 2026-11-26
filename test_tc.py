@@ -28,7 +28,7 @@ load_dotenv()
 from google import genai  # noqa: E402
 from google.genai import types  # noqa: E402
 
-from app import actions, case, handler, kakao, llm, media  # noqa: E402
+from app import actions, case, escalation, handler, kakao, llm, media  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent
 TC_DIR = BASE_DIR / "knowledge" / "tc"
@@ -270,7 +270,7 @@ async def run(tc_id, max_turns):
 
 
 def _is_fallback(text):
-    return text == handler.FALLBACK_REPLY or text.endswith("확인하지 못했어요. 다시 보내 주시겠어요?")
+    return text.startswith(escalation.FALLBACK_PREFIX) or text.endswith("확인하지 못했어요. 다시 보내 주시겠어요?")
 
 
 def _short(api):
