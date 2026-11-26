@@ -79,7 +79,9 @@ def apply(cards, conflicts, decisions):
     by_id = {c["id"]: c for c in cards}
     for conflict in conflicts:
         decision = decisions.get(conflict["id"]) or {}
-        choose = str(decision.get("choose", "")).strip()
+        if not isinstance(decision, dict):
+            decision = {}
+        choose =str(decision.get("choose", "")).strip()
         if choose == "suggested":
             choose = conflict["suggestion"] or ""
         conflict["decided"] = choose or None
@@ -124,6 +126,8 @@ def write_review(conflicts, cards, md_path, decisions_path):
         merged.setdefault(k, v)
     Path(decisions_path).write_text(
         "# 충돌 판정. choose: 따를 값 / suggested / both. 비워 두면 판정 전.\n"
+        "# 문서에서 못 찾은 카드 값(시행일·기준 시점·권위)은 cards: 아래에 카드 id별로 채운다:\n"
+        "#   cards:\n#     K1a2b3c4d5: {effectiveDate: 2037-06-20, basis: 신고일, authority: rule}\n"
         + yaml.safe_dump(merged, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 

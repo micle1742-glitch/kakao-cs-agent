@@ -1,0 +1,15 @@
+# 지어낸 예시입니다 (가상 고객·카드). 대회 실제 내용 없음.
+id: DEMO-11
+title: 구판 3일 vs 현행 5일 — 신고일 기준으로 현행판, 구판은 인정만
+tags: [헌법, 판정]
+kb: traps/fixtures/kb
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 오예시 · 010-0000-0011"}
+turns:
+  - customer: 6월 25일에 받은 상자가 물렀어요. 박스 안내문엔 3일 안에 접수하라던데 벌써 5일째예요. 접수돼요?
+llm_script:
+  - call: [{name: judge_rule, args: {topic: 반품 접수 기한, 신고일: "2037-06-30", claimed: 3일}}]
+  - text: "네, 접수됩니다. 지금 기준은 {last:judge_rule.value}입니다. {last:judge_rule.acknowledge}"
+expect:
+  tool_result:
+    - {tool: judge_rule, contains: ['"value": "5일"', '"basis": "신고일"'], not_contains: ['"value": "3일"']}
+  contains: ["지금 기준은 5일", "'3일'은(는)", "'5일'로 합니다"]

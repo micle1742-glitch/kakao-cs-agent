@@ -27,6 +27,8 @@ import yaml
 BASE_DIR = Path(__file__).resolve().parent
 # 재시도 뒤에도 실패한 실제 LLM 호출 (한도·과부하). 하나라도 있으면 결과에 모델 실패가 섞인 것
 LLM_FAILURES = []
+# 감싸기 전의 actions.execute (TC마다 다시 감싸도 겹치지 않게)
+ORIGINAL_EXECUTE = []
 
 
 def parse_args(argv=None):
@@ -150,6 +152,24 @@ async def run_case(tc, rep, args):
         return True
     kakao.send_reply = capture
 
+    # 로컬 도구(계산·판정) 호출도 채점 대상으로 같은 목록에 남긴다 (서버를 부르지 않으니 가짜 API에는 안 잡힘)
+    async def recording_execute(name, tool_args, tc_id):
+        result = await ORIGINAL_EXECUTE[0](name, tool_args, tc_id)
+        if name in actions.LOCAL_TOOLS:
+            api.calls.append({"tool": name, "method": "LOCAL", "path": None, "key": None, "params": None,
+                              "body": dict(tool_args), "status": 200, "data": result})
+        return result
+    if not ORIGINAL_EXECUTE:
+        ORIGINAL_EXECUTE.append(actions.execute)
+    actions.execute = recording_execute
+
+    # TC마다 쓸 kb 카드 (판정 도구가 읽음)
+    from app import prompt
+    old_kb = prompt.KB_DIR
+    if tc.get("kb"):
+        prompt.KB_DIR = (BASE_DIR / tc["kb"]).resolve()
+        prompt._cache["stamp"] = "unset"
+
     old_deadline = handler.REPLY_DEADLINE
     if "reply_deadline" in tc:
         handler.REPLY_DEADLINE = float(tc["reply_deadline"])
@@ -170,6 +190,8 @@ async def run_case(tc, rep, args):
                 await asyncio.sleep(args.pause)
     finally:
         handler.REPLY_DEADLINE = old_deadline
+        prompt.KB_DIR = old_kb
+        prompt._cache["stamp"] = "unset"
     all_replies = [r for rs in turn_replies for r in rs]
     checks += scoring.check(tc.get("expect") or {}, all_replies, api.calls, "케이스")
     checks += scoring.basic_checks(turn_replies, api.calls)

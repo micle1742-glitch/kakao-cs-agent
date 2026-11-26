@@ -21,7 +21,7 @@ from urllib.parse import quote
 import httpx
 import yaml
 
-from app import calendar, coupons, refunds, store
+from app import calendar, coupons, judge, refunds, store
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 KNOWLEDGE_DIR = BASE_DIR / "knowledge"
@@ -379,6 +379,8 @@ LOCAL_TOOLS = {
             "required": ["pay_date"],
         },
     }, _subscription_cutoff),
+    # 판(시행일)·권위로 값이 갈리는 쟁점의 판정 (kb 카드 + rules.yaml)
+    "judge_rule": (judge.tool_definition(), judge.judge),
 }
 
 

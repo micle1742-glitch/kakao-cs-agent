@@ -71,7 +71,7 @@ def test_build_cards_conflicts_and_failures(tmp_path):
     assert "d-capture" in report["failedUnits"]          # 실패한 문서는 빼고 진행
     old = next(c for c in cards if c["source"].get("documentId") == "d-old")
     assert old["source"]["chunkId"] == "d-old:0"         # 잘못 적은 조각 번호를 고침
-    assert old["authorityLabel"] == "구판"
+    assert old["authorityLabel"] == "구판·인쇄물" and old["authorityId"] == "old"
     oral = [c for c in cards if c["kind"] == "oral"]
     assert {c["topic"] for c in oral} == {"냉동 온도 이탈", "출고 시점"}   # 발굴 + 걸러진 발화 1개
     conflicts = json.loads((tmp_path / "current" / "conflicts.json").read_text(encoding="utf-8"))
@@ -130,3 +130,23 @@ def test_real_gate_runs_traps(tmp_path):
     report = run_build(tmp_path, ScriptedExtractor(script()), gate=kb_build.default_gate)
     assert report["published"], report["gate"]
     assert "TC 통과" in report["gate"]
+
+
+def test_basis_default_and_human_card_fix(tmp_path, monkeypatch):
+    """기준 시점은 rules.yaml 쟁점 기본값으로 채우고, 문서에서 못 찾은 값은 decisions.yaml cards:로 사람이 채운다."""
+    cfg = yaml.safe_load((Path(__file__).resolve().parent.parent / "rules.yaml").read_text(encoding="utf-8"))
+    cfg["topics"] = {"하자 접수 기한": "신고일"}
+    rules_file = tmp_path / "rules.yaml"
+    rules_file.write_text(yaml.safe_dump(cfg, allow_unicode=True), encoding="utf-8")
+    monkeypatch.setenv("RULES_FILE", str(rules_file))
+    out = tmp_path / "kb"
+    run_build(out, ScriptedExtractor(script()))
+    promo = next(c for c in cards_of(out) if c["source"].get("documentId") == "d-promo")
+    assert next(c for c in cards_of(out) if c["topic"] == "하자 접수 기한")["basis"] == "신고일"
+    decisions = yaml.safe_load((out / "decisions.yaml").read_text(encoding="utf-8")) or {}
+    decisions["cards"] = {promo["id"]: {"effectiveDate": "2037-06-08", "authority": "oral"}}
+    (out / "decisions.yaml").write_text(yaml.safe_dump(decisions, allow_unicode=True), encoding="utf-8")
+    run_build(out, None)
+    fixed = next(c for c in cards_of(out) if c["id"] == promo["id"])
+    assert fixed["effectiveDate"] == "2037-06-08" and fixed["authorityId"] == "oral"
+    assert fixed["authorityLabel"] == "구두" and fixed["fixedBy"] == "decisions.yaml"

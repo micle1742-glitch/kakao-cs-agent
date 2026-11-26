@@ -5,7 +5,8 @@
 
 대본(llm_script)은 케이스 전체에 걸친 단계 목록이고, LLM 호출 때마다 앞에서부터 소비한다.
   - {call: [{name: API_03, args: {...}}, ...]}  도구 호출 응답. 왕복 상한(text_only)에 걸리면 건너뛴다
-  - {text: "..."}                               글 답. {last_receipt}는 입력에 보이는 마지막 접수번호로 바뀐다
+  - {text: "..."}                               글 답. {last_receipt}는 입력에 보이는 마지막 접수번호로,
+                                                {last:도구.필드}는 그 도구의 마지막 결과 값으로 바뀐다
   - {hang: 30}                                  N초 동안 응답하지 않음 (시간 초과 시험)
   - {assert_input: ["...", ...]}                 이번 호출 입력(시스템·케이스 정보·대화)에 문자열이 모두 있는지 기록
 """
@@ -31,6 +32,20 @@ def render_input(system, context, contents):
             if p.function_response:
                 out.append(f"{p.function_response.name} {json.dumps(p.function_response.response, ensure_ascii=False)}")
     return "\n".join(out)
+
+
+LAST_FIELD = re.compile(r"\{last:(\w+)\.(\w+)\}")
+
+
+def _last_field(contents, tool, field):
+    """입력에 있는 그 도구의 마지막 결과에서 필드 값 (목록은 이어 붙임). 모델이 도구 결과를 그대로 옮겨 말하는 흉내."""
+    for c in reversed(contents):
+        for p in reversed(c.parts or ()):
+            fr = p.function_response
+            if fr and fr.name == tool:
+                value = (fr.response or {}).get("output", {}).get(field, "")
+                return " ".join(map(str, value)) if isinstance(value, list) else str(value)
+    return ""
 
 
 def _response(parts):
@@ -65,5 +80,6 @@ class ScriptedLLM:
             if "text" in step:
                 receipts = RECEIPT.findall(seen)
                 text = step["text"].replace("{last_receipt}", receipts[-1] if receipts else "")
+                text = LAST_FIELD.sub(lambda m: _last_field(contents, m.group(1), m.group(2)), text)
                 return _response([types.Part(text=text)])
         return _response([types.Part(text="(대본 끝)")])

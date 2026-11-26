@@ -22,7 +22,8 @@ from pathlib import Path
 from kb import classify as classify_mod
 from kb import conflicts as conflict_mod
 from kb import contract, oral
-from kb.cards import card_id, clean_values, verify
+from app import rules
+from kb.cards import card_id, clean_values, topic_key, verify
 from kb.render import render
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -143,8 +144,16 @@ async def run_units(units, extractor, state, raw, rejected, known_topics, log):
 
 # --- 조립 ---
 
-def assemble(kb, classes, raw):
-    """추출 캐시 + 지금의 분류(사람이 고친 것 포함) → 봇에 넣을 카드."""
+def assemble(kb, classes, raw, decisions=None):
+    """추출 캐시 + 지금의 분류(사람이 고친 것 포함) → 봇에 넣을 카드.
+
+    카드마다 권위(id·순위·이름), 판(시행일), 기준 시점을 채운다. 기준 시점은 카드에 없으면 rules.yaml의
+    쟁점별 기본값. 문서에서 못 찾은 값은 사람이 decisions.yaml의 cards: 아래에 카드 id별로 채운다
+      cards:
+        K1a2b3c4d5: {effectiveDate: 2037-06-20, basis: 신고일, authority: rule}
+    """
+    fixes = (decisions or {}).get("cards") or {}
+    topic_basis = {topic_key(t): b for t, b in rules.get()["topics"].items()}
     cards = []
     for r in raw.values():
         card = dict(r)
@@ -159,9 +168,20 @@ def assemble(kb, classes, raw):
                         source={"documentId": doc["id"], "fileName": doc.get("fileName"),
                                 "location": chunk.get("location"), "chunkId": r["anchor"]})
         else:
-            rank, label = classify_mod.AUTHORITY["oral"]
+            rank, label = classify_mod.authority("oral")
             card.update(kind="oral", authority=rank, authorityLabel=label, effectiveDate=None, code=None, topics=[],
                         source={"bot": ", ".join(r.get("bots") or []) or None, "utteranceId": r["anchor"]})
+        card["authorityId"] = card["kind"]
+        card["basis"] = card.get("basis") or topic_basis.get(topic_key(card["topic"]))
+        fix = fixes.get(card["id"]) or {}
+        for field in ("effectiveDate", "basis", "topic"):
+            if fix.get(field):
+                card[field] = str(fix[field])
+        if fix.get("authority"):
+            card["authorityId"] = fix["authority"]
+            card["authority"], card["authorityLabel"] = rules.rank(fix["authority"])
+        if fix:
+            card["fixedBy"] = "decisions.yaml"
         cards.append(card)
     return sorted(cards, key=lambda c: (c["topic"], c["authority"], c["id"]))
 
@@ -239,9 +259,10 @@ async def build(kb_path, out, extractor=None, gate=default_gate, max_units=None,
         _write_jsonl(paths.cards, list(raw.values()))
         _write_jsonl(paths.rejected, rejected)
 
-    cards = assemble(kb, classes, raw)
+    decisions = conflict_mod.load_decisions(paths.decisions)
+    cards = assemble(kb, classes, raw, decisions)
     conflicts = conflict_mod.find(cards)
-    conflict_mod.apply(cards, conflicts, conflict_mod.load_decisions(paths.decisions))
+    conflict_mod.apply(cards, conflicts, decisions)
     conflict_mod.write_review(conflicts, cards, paths.out / "conflicts.md", paths.decisions)
 
     shutil.rmtree(paths.staging, ignore_errors=True)

@@ -1,0 +1,15 @@
+# 지어낸 예시입니다 (가상 고객·카드). 대회 실제 내용 없음.
+id: DEMO-13
+title: 홍보물 약속은 인정하되 효력 없음 — 배너 "당일 출고" vs 출고 기록
+tags: [헌법, 판정]
+kb: traps/fixtures/kb
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 임예시 · 010-0000-0013"}
+turns:
+  - customer: 배너에 오늘 주문하면 오늘 출고라고 써 있던데 왜 아직 안 나갔어요?
+llm_script:
+  - call: [{name: judge_rule, args: {topic: 출고 요일, claimed: 주문 당일}}]
+  - text: "기다리시게 해서 죄송합니다. {last:judge_rule.acknowledge}"
+expect:
+  tool_result:
+    - {tool: judge_rule, contains: ['"value": "월·수·금"', '"claimedIsWinner": false']}
+  contains: ["'주문 당일'은(는) 홍보물·발언·배너에 그렇게 나와 있던 것이 맞습니다", "'월·수·금'로 합니다"]

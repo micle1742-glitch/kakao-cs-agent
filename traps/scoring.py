@@ -7,6 +7,7 @@ expect (케이스 전체) 또는 turns[i].expect (그 턴만)에 쓸 수 있는 
   contains:     [문자열, ...]        답(말풍선들)에 모두 있어야 함
   contains_any: [[a, b], ...]        묶음마다 하나 이상 있어야 함 (예: 날짜 표기 여러 가지)
   not_contains: [문자열, ...]        답 어디에도 없어야 함 (금지 문구)
+  tool_result:  [{tool, contains: [...], not_contains: [...]}]  그 도구(로컬 계산·판정 포함) 결과에 문자열이 있어야/없어야 함
 기본 검사(항상): 말풍선마다 500자 이하, 턴마다 말풍선 1개, 답에 나온 접수번호는 실제 접수 결과에 있음(지어낸 번호 금지).
 """
 
@@ -59,6 +60,12 @@ def check(expect, replies, calls, scope):
         results.append((any(s in text for s in group), f"[{scope}] 답에 「{' / '.join(group)}」 중 하나"))
     for s in expect.get("not_contains", ()):
         results.append((s not in text, f"[{scope}] 답에 「{s}」 없음"))
+    for want in expect.get("tool_result", ()):
+        outs = json.dumps([c.get("data") for c in calls if c["tool"] == want["tool"]], ensure_ascii=False)
+        for s in want.get("contains", ()):
+            results.append((s in outs, f"[{scope}] {want['tool']} 결과에 「{s}」"))
+        for s in want.get("not_contains", ()):
+            results.append((s not in outs, f"[{scope}] {want['tool']} 결과에 「{s}」 없음"))
     return results
 
 

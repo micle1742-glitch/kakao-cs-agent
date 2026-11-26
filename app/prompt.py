@@ -113,16 +113,24 @@ def _load_kb():
 
 
 def build_system_prompt():
+    """헌법(맨 앞, rules.yaml) + 답변 규칙 + knowledge 문서 + kb 카드."""
+    from app import constitution  # constitution → rules만 쓰므로 순환 없음. 여기서 읽어 rules.yaml 변경도 반영
     kb = _load_kb()
-    return f"{RULES}\n<knowledge>\n{_load_knowledge()}\n</knowledge>" + (f"\n{kb}" if kb else "")
+    return (f"{constitution.build()}\n{RULES}\n<knowledge>\n{_load_knowledge()}\n</knowledge>"
+            + (f"\n{kb}" if kb else ""))
 
 
 def _kb_stamp():
-    try:
-        stat = (KB_DIR / "version.json").stat()
-        return stat.st_mtime_ns, stat.st_size
-    except OSError:
-        return None
+    """kb 공개본과 rules.yaml이 바뀌었는지 보는 표시 (둘 중 하나가 바뀌면 프롬프트를 다시 만든다)."""
+    from app import rules
+    stamps = []
+    for path in (KB_DIR / "version.json", rules.path()):
+        try:
+            stat = path.stat()
+            stamps.append((stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            stamps.append(None)
+    return tuple(stamps)
 
 
 _cache = {"stamp": "unset", "prompt": None}
