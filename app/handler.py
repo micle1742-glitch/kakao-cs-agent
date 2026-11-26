@@ -63,6 +63,8 @@ async def _answer(user_key, history, message, case_info, timeout, trace):
         return new[-1] if new else None
 
     async def tool_executor(name, args):
+        if name == "judge_rule" and case_info and not args.get("오늘"):
+            args = {**args, "오늘": case_info.get("received_at")}  # 기준이 '오늘'인 쟁점은 상담 인입 일시로
         # 같은 대상·레인 이관은 다시 보내지 않고 앞선 결과를 돌려줌
         result = escalation.previous(name, args, tc_id) or await actions.execute(name, args, tc_id)
         store.record_tool_call(user_key, tc_id, name, args, result)

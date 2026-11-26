@@ -1,0 +1,23 @@
+# 지어낸 예시입니다 (가상 고객·카드). 대회 실제 내용 없음.
+id: DEMO-14
+title: 판을 가릴 수 없거나 카드가 없으면 '확인되지 않음 → 이관' (지어내지 않음)
+tags: [헌법, 판정, 이관]
+kb: traps/fixtures/kb
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 장예시 · 010-0000-0014"}
+turns:
+  - customer: 냉동 상품엔 아이스팩을 몇 개 넣어 주시나요?
+  - customer: 그럼 선물 포장비는 얼마예요?
+    expect:
+      tool_result: [{tool: judge_rule, contains: ["이 쟁점의 카드가 없음"]}]
+llm_script:
+  - call: [{name: judge_rule, args: {topic: 포장 기준}}]
+  - text: 포장 기준은 지금 확인되지 않아 담당자에게 확인을 넘기겠습니다.
+  - call: [{name: judge_rule, args: {topic: 선물 포장비}}]
+  - text: 선물 포장비도 확인되지 않아 같은 건으로 담당자에게 전달하겠습니다.
+expect:
+  tool_result:
+    - {tool: judge_rule, contains: ['"result": "확인되지 않음"', "같은 권위의 카드끼리 값이 다르고"], not_contains: ['"value": "아이스팩']}
+  api: [{tool: API_35}]
+  api_max: {API_35: 1}
+  contains: [HO-20370630-001]
+  not_contains: [아이스팩 2개, 아이스팩 3개]

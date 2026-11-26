@@ -3,12 +3,9 @@
 수집 쪽 kind 어림(rule/record/promo/capture/other)을 시작점으로, 내용 단서로 한 번 보정하고, 사람이 고친
 overrides 파일이 있으면 그것이 이긴다. 분류가 곧 카드의 권위(충돌 때 어느 쪽이 이기나)를 정한다.
 
-권위 순서 (숫자가 작을수록 강함. 설계안의 우선순위 헌법 4~8단)
-  4 원장·기록      시스템 원장, 대장, 로그, 제3자 기록
-  5 현행 규정      규정·약관·기준·절차의 현행판
-  6 구판·확인 필요  같은 문서 번호의 옛 판, 종류를 못 정한 문서
-  7 홍보물         배너·안내문·카탈로그·방송 발언 (있었던 사실로 인정, 효력 없음)
-  8 구두           대화로만 나온 진술
+권위 순서는 rules.yaml(우선순위 헌법)에서 읽는다. 문서 분류 → 권위 id:
+  record 시스템 원장·기록 / rule 현행 규정 / old 같은 문서 번호의 옛 판 / promo 홍보물 / oral 대화로만 나온 진술
+  unknown 종류를 못 정한 문서 (rules.yaml의 unknown_as와 같은 순위)
 """
 
 import re
@@ -16,14 +13,14 @@ from pathlib import Path
 
 import yaml
 
-AUTHORITY = {
-    "record": (4, "원장·기록"),
-    "rule": (5, "현행 규정"),
-    "old": (6, "구판"),
-    "unknown": (6, "확인 필요"),
-    "promo": (7, "홍보물"),
-    "oral": (8, "구두"),
-}
+from app import rules
+
+KINDS = ("record", "rule", "old", "unknown", "promo", "oral")
+
+
+def authority(kind):
+    """문서 분류 → (순위, 이름). skip 등 권위가 없는 분류는 (None, '건너뜀')."""
+    return rules.rank(kind) if kind in KINDS else (None, "건너뜀")
 
 # 내용 단서 (사진·기타로 들어온 문서를 다시 본다)
 RULE_HINT = re.compile(r"제\s*\d+\s*조|규정|약관|세칙|절차서|기준|시행|부칙")
@@ -124,7 +121,7 @@ def classify(kb, overrides=None):
         else:
             kind = refine_kind(doc, kb.by_doc.get(doc_id, []))
             reason = "수집 쪽 어림" if kind == doc.get("kind") else f"내용으로 보정 ({doc.get('kind')}→{kind})"
-        rank, label = AUTHORITY.get(kind, (None, "건너뜀"))
+        rank, label = authority(kind)
         out[doc_id] = {"kind": kind, "rank": rank, "label": label, "reason": reason, "sameAs": None}
     for dup, keep in duplicates(kb, out).items():
         if dup not in overrides:  # 사람이 따로 정한 문서는 그대로

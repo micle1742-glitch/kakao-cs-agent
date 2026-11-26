@@ -1,0 +1,178 @@
+[
+ {
+  "id": "K-ret-new",
+  "topic": "반품 접수 기한",
+  "rule": "하자 반품은 받은 날부터 5일 안에 접수한다.",
+  "values": [
+   {
+    "name": "접수 기한",
+    "value": "5일"
+   }
+  ],
+  "basis": "신고일",
+  "evidence": "하자 반품은 받은 날부터 5일 안에 접수한다.",
+  "kind": "rule",
+  "authorityId": "rule",
+  "authority": 5,
+  "authorityLabel": "현행 규정",
+  "effectiveDate": "2037-06-20",
+  "code": null,
+  "source": {
+   "fileName": "반품규정_개정.docx"
+  }
+ },
+ {
+  "id": "K-ret-old",
+  "topic": "반품 접수 기한",
+  "rule": "하자 반품은 받은 날부터 3일 안에 접수한다.",
+  "values": [
+   {
+    "name": "접수 기한",
+    "value": "3일"
+   }
+  ],
+  "basis": "신고일",
+  "evidence": "하자 반품은 받은 날부터 3일 안에 접수한다.",
+  "kind": "old",
+  "authorityId": "old",
+  "authority": 6,
+  "authorityLabel": "구판·인쇄물",
+  "effectiveDate": "2037-01-02",
+  "code": null,
+  "source": {
+   "fileName": "박스안내문_구판.png"
+  }
+ },
+ {
+  "id": "K-pd-new",
+  "topic": "가격 인하 보상",
+  "rule": "산 지 10일 안에 값이 내리면 차액을 쿠폰으로 보상한다.",
+  "values": [
+   {
+    "name": "보상 조건",
+    "value": "10일 이내 쿠폰"
+   }
+  ],
+  "basis": "주문일",
+  "evidence": "산 지 10일 안에 값이 내리면 차액을 쿠폰으로 보상한다.",
+  "kind": "rule",
+  "authorityId": "rule",
+  "authority": 5,
+  "authorityLabel": "현행 규정",
+  "effectiveDate": "2037-06-15",
+  "code": null,
+  "source": {
+   "fileName": "보상규정_개정.docx"
+  }
+ },
+ {
+  "id": "K-pd-old",
+  "topic": "가격 인하 보상",
+  "rule": "값이 내리면 기간 제한 없이 차액을 돌려준다.",
+  "values": [
+   {
+    "name": "보상 조건",
+    "value": "기간 제한 없이 차액 환불"
+   }
+  ],
+  "basis": "주문일",
+  "evidence": "값이 내리면 기간 제한 없이 차액을 돌려준다.",
+  "kind": "old",
+  "authorityId": "old",
+  "authority": 6,
+  "authorityLabel": "구판·인쇄물",
+  "effectiveDate": "2037-03-02",
+  "code": null,
+  "source": {
+   "fileName": "보상규정_구판.docx"
+  }
+ },
+ {
+  "id": "K-ship-rec",
+  "topic": "출고 요일",
+  "rule": "출고는 월·수·금에만 한다.",
+  "values": [
+   {
+    "name": "출고일",
+    "value": "월·수·금"
+   }
+  ],
+  "basis": null,
+  "evidence": "출고는 월·수·금에만 한다.",
+  "kind": "record",
+  "authorityId": "record",
+  "authority": 4,
+  "authorityLabel": "시스템 원장·기록",
+  "effectiveDate": null,
+  "code": null,
+  "source": {
+   "fileName": "출고기록.xlsx"
+  }
+ },
+ {
+  "id": "K-ship-promo",
+  "topic": "출고 요일",
+  "rule": "오늘 주문하면 오늘 출고된다고 배너에 씀.",
+  "values": [
+   {
+    "name": "출고일",
+    "value": "주문 당일"
+   }
+  ],
+  "basis": null,
+  "evidence": "오늘 주문하면 오늘 출고된다고 배너에 씀.",
+  "kind": "promo",
+  "authorityId": "promo",
+  "authority": 7,
+  "authorityLabel": "홍보물·발언·배너",
+  "effectiveDate": null,
+  "code": null,
+  "source": {
+   "fileName": "배너01.png"
+  }
+ },
+ {
+  "id": "K-pack-a",
+  "topic": "포장 기준",
+  "rule": "냉동 상품은 아이스팩 두 개를 넣는다.",
+  "values": [
+   {
+    "name": "아이스팩",
+    "value": "아이스팩 2개"
+   }
+  ],
+  "basis": null,
+  "evidence": "냉동 상품은 아이스팩 두 개를 넣는다.",
+  "kind": "rule",
+  "authorityId": "rule",
+  "authority": 5,
+  "authorityLabel": "현행 규정",
+  "effectiveDate": null,
+  "code": null,
+  "source": {
+   "fileName": "포장기준_A.docx"
+  }
+ },
+ {
+  "id": "K-pack-b",
+  "topic": "포장 기준",
+  "rule": "냉동 상품은 아이스팩 세 개를 넣는다.",
+  "values": [
+   {
+    "name": "아이스팩",
+    "value": "아이스팩 3개"
+   }
+  ],
+  "basis": null,
+  "evidence": "냉동 상품은 아이스팩 세 개를 넣는다.",
+  "kind": "rule",
+  "authorityId": "rule",
+  "authority": 5,
+  "authorityLabel": "현행 규정",
+  "effectiveDate": null,
+  "code": null,
+  "source": {
+   "fileName": "포장기준_B.docx"
+  }
+ }
+]
