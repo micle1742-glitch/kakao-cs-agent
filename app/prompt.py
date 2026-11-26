@@ -3,11 +3,13 @@
 공개용 요약본입니다. 실제 프롬프트는 대회 문서에서 뽑은 규칙을 담고 있어 공개하지 않았고, 여기엔 구조와 원칙만 남겼습니다.
 """
 
+import json
 import logging
 import os
 from pathlib import Path
 
-KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / "knowledge"
+# 클라우드에서는 볼륨(/data) 아래를 가리키게 환경변수로 바꾼다
+KNOWLEDGE_DIR = Path(os.getenv("KNOWLEDGE_DIR") or Path(__file__).resolve().parent.parent / "knowledge")
 # kb 빌드(build_kb.py)가 회귀 테스트를 통과한 카드를 두는 곳
 KB_DIR = Path(os.getenv("KB_DIR") or KNOWLEDGE_DIR / "kb" / "current")
 
@@ -112,10 +114,52 @@ def _load_kb():
     return path.read_text(encoding="utf-8").strip() if path.exists() else ""
 
 
+def _kb_select():
+    """카드 골라 넣기 켜짐 여부 (KB_SELECT=off면 예전처럼 카드 전부를 시스템 프롬프트에)."""
+    return (os.getenv("KB_SELECT") or "on").lower() != "off"
+
+
+_kb_cache = {"stamp": None, "cards": [], "conflicts": []}
+
+
+def kb_cards():
+    """kb 공개본의 (카드, 충돌). version.json이 바뀌면 다시 읽는다. 판정 도구와 골라 넣기가 같이 쓴다."""
+    stamp = _kb_stamp()[0], str(KB_DIR)
+    if stamp != _kb_cache["stamp"]:
+        def read(name):
+            path = KB_DIR / name
+            return json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+        _kb_cache.update(stamp=stamp, cards=read("cards.json"), conflicts=read("conflicts.json"))
+    return _kb_cache["cards"], _kb_cache["conflicts"]
+
+
+def _topic_index(cards):
+    topics = sorted({c["topic"] for c in cards})
+    return ("<kb_topics>\n수집한 규칙 카드의 쟁점 이름 (judge_rule의 topic에 그대로 쓴다). "
+            "이번 상황에 맞아 보이는 카드는 케이스 정보 뒤 <kb>에 따로 준다. "
+            "여기 목록에는 있는데 <kb>에 없는 쟁점이 필요하면 judge_rule로 그 쟁점의 값과 근거를 받는다.\n"
+            + " · ".join(topics) + "\n</kb_topics>")
+
+
+def kb_context(current, earlier=()):
+    """이번 턴에 넣을 카드 글 (골라 넣기). 꺼져 있거나 카드가 없으면 빈 글."""
+    if not _kb_select():
+        return ""
+    from app import select
+    from kb.render import render
+    cards, conflicts = kb_cards()
+    chosen = select.pick(cards, current, earlier)
+    return render(chosen, conflicts) if chosen else ""
+
+
 def build_system_prompt():
-    """헌법(맨 앞, rules.yaml) + 답변 규칙 + knowledge 문서 + kb 카드."""
+    """헌법(맨 앞, rules.yaml) + 답변 규칙 + knowledge 문서 + kb(골라 넣기면 쟁점 목록만, 아니면 카드 전부).
+
+    골라 넣기일 때 시스템 프롬프트는 kb가 바뀔 때만 바뀌어 캐시가 유지되고, 상황별 카드는 매 턴 컨텍스트로 간다.
+    """
     from app import constitution  # constitution → rules만 쓰므로 순환 없음. 여기서 읽어 rules.yaml 변경도 반영
-    kb = _load_kb()
+    cards, _ = kb_cards()
+    kb = _topic_index(cards) if _kb_select() and cards else _load_kb()
     return (f"{constitution.build()}\n{RULES}\n<knowledge>\n{_load_knowledge()}\n</knowledge>"
             + (f"\n{kb}" if kb else ""))
 

@@ -11,7 +11,6 @@ LLM이 판(시행일)과 권위를 직접 따지면 추론을 꺼 둔 상태에�
 '확인되지 않음 → 이관'을 돌려준다. 기준 날짜가 필요한데 없으면 그 날짜를 물으라고 돌려준다.
 """
 
-import json
 import logging
 
 from app import calendar, prompt, rules
@@ -19,21 +18,9 @@ from kb.cards import norm, topic_key
 
 logger = logging.getLogger("judge")
 VERSIONED = ("rule", "old")  # 판(시행일)으로 고르는 분류 — 같은 규정의 현행판·옛 판
-_cache = {"stamp": None, "cards": []}
-
-
 def _cards():
-    """kb 공개본의 카드 (version.json이 바뀌면 다시 읽음)."""
-    path = prompt.KB_DIR / "cards.json"
-    try:
-        stat = path.stat()
-        stamp = (str(path), stat.st_mtime_ns, stat.st_size)
-    except OSError:
-        return []
-    if stamp != _cache["stamp"]:
-        _cache["cards"] = json.loads(path.read_text(encoding="utf-8"))
-        _cache["stamp"] = stamp
-    return _cache["cards"]
+    """kb 공개본의 카드 전부 (골라 넣기와 상관없이 판정은 전체를 본다)."""
+    return prompt.kb_cards()[0]
 
 
 def _value(card):
