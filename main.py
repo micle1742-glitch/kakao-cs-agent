@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 # httpx 요청 로그는 끔 (헤더/토큰이 찍히지 않게, 콜백·API 결과는 kakao·actions 로그로 남김)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-from app import actions, kakao, media  # noqa: E402
+from app import actions, health, kakao, media  # noqa: E402
 from app.gateway import Gateway  # noqa: E402
 
 
@@ -20,9 +20,16 @@ async def main():
     bot_token = os.getenv("BOT_TOKEN")
     if not bot_token:
         sys.exit("BOT_TOKEN이 .env에 없습니다. README의 .env 설정을 확인하세요.")
+    # 상태 확인 서버(/health)와 감시: 클라우드에서 살아 있는지 보고, 오래 끊기면 재시작되게
+    port = int(os.getenv("HEALTH_PORT") or "0")
+    server = await health.serve(port) if port else None
+    watchdog = asyncio.create_task(health.watchdog())
     try:
         await Gateway(bot_token).run_forever()
     finally:
+        watchdog.cancel()
+        if server:
+            server.close()
         await kakao.close()
         await actions.close()
         await media.close()

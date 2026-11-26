@@ -103,6 +103,10 @@ async def _answer(user_key, history, message, case_info, timeout, trace):
         await escalation.force(user_key, tc_id, "위기 신호", customer_text, **crisis.escalation_args())
         return crisis.reply(history)
     context = _context(case_info, history)
+    # 이번 상황에 맞는 kb 카드만 (이번 말 + 이 케이스의 앞선 고객 말 3개로 고름)
+    cards_text = prompt.kb_context(customer_text, [m["content"] for m in history if m["role"] == "user"][-3:])
+    if cards_text:
+        context = f"{context}\n{cards_text}" if context else cards_text
     if kind == crisis.HEALTH and context:
         context += "\n(코드 판단: 이번 문의는 몸 이상 문의이며 위기 신호가 아니다. 상담 자원 안내를 하지 않는다.)"
 

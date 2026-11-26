@@ -24,7 +24,7 @@ import yaml
 from app import calendar, coupons, judge, refunds, store
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-KNOWLEDGE_DIR = BASE_DIR / "knowledge"
+KNOWLEDGE_DIR = Path(os.getenv("KNOWLEDGE_DIR") or BASE_DIR / "knowledge")  # 클라우드에선 볼륨 아래
 API_USAGE_LOG = store.DATA_DIR / "api_usage.log"
 BASE_URL = os.getenv("ACTION_BASE_URL", "https://gyodong-mall-action.aitop100.org")
 SPEC_PATH = "/api/openapi.json"

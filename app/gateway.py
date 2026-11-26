@@ -8,7 +8,7 @@ import time
 
 import websockets
 
-from app import store
+from app import health, store
 from app.handler import handle_message
 
 GW_URL = "wss://bot-gateway.kakao.com/gateway"
@@ -46,6 +46,7 @@ class Gateway:
                 async with websockets.connect(GW_URL) as ws:
                     await self._identify(ws)
                     connected = True
+                    health.set_connected(True)
                     backoff = 1
                     await self._listen(ws)
                 logger.warning("게이트웨이 연결 종료")
@@ -53,6 +54,7 @@ class Gateway:
                 raise
             except Exception as e:
                 logger.warning("게이트웨이 오류: %r", e)
+            health.set_connected(False)
             delay = min(backoff + random.uniform(0, backoff / 2), MAX_BACKOFF_SECONDS)
             logger.info("%.1f초 후 재연결", delay)
             await asyncio.sleep(delay)
@@ -80,6 +82,7 @@ class Gateway:
 
     def _dispatch(self, event):
         received_at = time.perf_counter()
+        health.mark("last_event")
         d = event.get("d") or {}
         raw = json.dumps({**event, "d": _mask(d)}, ensure_ascii=False)
         if self.logged_events < LOG_FIRST_EVENTS:
@@ -105,5 +108,6 @@ class Gateway:
             while True:
                 await asyncio.sleep(self.heartbeat_interval)
                 await ws.send(json.dumps({"op": OP_HEARTBEAT}))
+                health.mark("last_heartbeat")
         except websockets.ConnectionClosed:
             pass

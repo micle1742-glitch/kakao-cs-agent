@@ -120,9 +120,13 @@ def test_bot_reloads_new_kb_without_restart(tmp_path, monkeypatch):
     from app import prompt
     monkeypatch.setattr(prompt, "KB_DIR", tmp_path / "current")
     monkeypatch.setattr(prompt, "_cache", {"stamp": "unset", "prompt": None})
-    assert "<kb>" not in prompt.system_prompt()        # 아직 공개본 없음
+    assert "<kb_topics>" not in prompt.system_prompt()  # 아직 공개본 없음
     run_build(tmp_path, ScriptedExtractor(script()))
-    assert "하자 신고는 수령일로부터 5일" in prompt.system_prompt()
+    assert "하자 접수 기한" in prompt.system_prompt()     # 시스템 프롬프트엔 쟁점 목록 (재시작 없이 반영)
+    assert "수령일로부터 5일" in prompt.kb_context("하자 접수 기한이 며칠이에요?")  # 카드 본문은 상황별로
+    monkeypatch.setenv("KB_SELECT", "off")
+    prompt._cache["stamp"] = "unset"
+    assert "하자 신고는 수령일로부터 5일" in prompt.system_prompt()  # 끄면 예전처럼 전부
 
 
 def test_real_gate_runs_traps(tmp_path):
