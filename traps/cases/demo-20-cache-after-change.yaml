@@ -1,0 +1,16 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-20
+title: 배송지 변경 접수 뒤 같은 배송 조회는 캐시가 아니라 서버에서 다시
+tags: [조회]
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 범예시 · 010-0000-0020"}
+api_fixtures:
+  API_04: {"900000020": {status: 집하 전}}
+turns:
+  - customer: 주문 900000020 배송지를 예시로 7로 바꾸고 바뀌었는지 확인해 주세요
+llm_script:
+  - call: [{name: API_04, args: {order_id: "900000020"}}]
+  - call: [{name: API_10, args: {order_id: "900000020", address: 예시로 7}}]
+  - call: [{name: API_04, args: {order_id: "900000020"}}]
+  - text: 배송지 변경을 접수했고, 다시 조회해 반영 상태를 확인했습니다.
+expect:
+  api_min: {API_04: 2}
