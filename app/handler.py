@@ -6,8 +6,7 @@ import os
 import re
 import time
 
-from app import actions, case, case_state, escalation, kakao, llm, media, store
-from app.prompt import build_system_prompt
+from app import actions, case, case_state, escalation, kakao, llm, media, prompt, store
 
 logger = logging.getLogger("handler")
 
@@ -16,7 +15,6 @@ logger = logging.getLogger("handler")
 # 케이스당 응답이 10건(메시지 20개)이라 케이스 전체를 넘긴다. 이 값은 이상 상황에서 입력이 끝없이 커지지 않게 막는 상한
 HISTORY_SIZE = int(os.getenv("HISTORY_SIZE") or "40")
 
-SYSTEM_PROMPT = build_system_prompt()
 ENABLE_TOOLS = os.getenv("ENABLE_TOOLS", "false").lower() == "true"
 TOOLS = actions.load_tools() if ENABLE_TOOLS else None
 # 수신부터 답장까지 쓸 수 있는 최대 시간 (평가는 60초 무응답이면 케이스 종료)
@@ -90,7 +88,7 @@ async def _answer(user_key, history, message, case_info, timeout, trace):
         reply = await asyncio.wait_for(
             llm.generate(
                 messages,
-                system=SYSTEM_PROMPT,
+                system=prompt.system_prompt(),  # kb 공개본이 바뀌면 새 카드로
                 context=_context(case_info, history),
                 tools=TOOLS,
                 tool_executor=tool_executor if TOOLS else None,

@@ -1,0 +1,69 @@
+# 가짜 추출기 대본 (지어낸 예시). 단위 key → 카드 목록, 또는 {error: ...}로 실패 흉내
+d-rule:
+- topic: 하자 접수 기한
+  rule: 하자 신고는 수령일로부터 5일 이내에 받는다.
+  values:
+  - name: 접수 기한
+    value: 5일
+  basis: ''
+  evidence: 하자 신고는 수령일로부터 5일 이내에 접수한다
+  chunkId: d-rule:0
+- topic: 환불 수단
+  rule: 환불은 원결제수단으로만 한다.
+  values: []
+  basis: ''
+  evidence: 환불은 원결제수단으로만 한다.
+  chunkId: d-rule:1
+- topic: 환불 수단
+  rule: 현금 환불도 된다.
+  values: []
+  basis: ''
+  evidence: 환불은 현금으로도 가능하다
+  chunkId: d-rule:1
+d-old:
+- topic: 하자 접수 기한
+  rule: 하자 신고는 수령일로부터 3일 이내.
+  values:
+  - name: 접수 기한
+    value: 3일
+  basis: ''
+  evidence: 하자 신고는 수령일로부터 3일 이내에 해 주세요
+  chunkId: d-old:5
+d-promo:
+- topic: 출고 시점
+  rule: 오늘 주문하면 오늘 출고된다고 홍보함.
+  values:
+  - name: 출고일
+    value: 주문 당일
+  basis: ''
+  evidence: 오늘 주문하면 오늘 출고!
+  chunkId: d-promo:0
+d-record:
+- topic: 출고 시점
+  rule: 출고는 월·수·금에만 한다.
+  values:
+  - name: 출고일
+    value: 월·수·금
+  basis: ''
+  evidence: 출고는 월·수·금에만 한다.
+  chunkId: d-record:1
+d-capture:
+  error: 429 하루 한도 초과 (시험용)
+findings:finding:f1:
+- topic: 냉동 온도 이탈
+  rule: 영하 15도를 넘은 상태가 30분 넘게 이어져야 이탈로 본다.
+  values:
+  - name: 이탈 판정
+    value: -15도 초과 30분
+  basis: ''
+  evidence: 영하 15도를 넘은 채 30분 넘게 이어져야 이탈로 칩니다
+  chunkId: finding:f1
+utter:봇A:utt:u2:
+- topic: 출고 시점
+  rule: 당일 출고는 없다.
+  values:
+  - name: 출고일
+    value: 당일 출고 없음
+  basis: ''
+  evidence: 당일 출고는 따로 없어요
+  chunkId: utt:u2
