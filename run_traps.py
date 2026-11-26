@@ -34,6 +34,7 @@ def parse_args(argv=None):
     p.add_argument("--cases", default=str(BASE_DIR / "traps" / "cases"), help="TC 폴더 (*.yaml)")
     p.add_argument("--llm", choices=["script", "gemini"], default="script")
     p.add_argument("--knowledge", help="시스템 프롬프트에 넣을 knowledge 폴더 (기본: 프로젝트 knowledge/)")
+    p.add_argument("--kb", help="kb 카드 폴더 (기본: knowledge/kb/current). kb 빌드가 staging을 시험할 때 씀")
     p.add_argument("--spec", default=str(BASE_DIR / "traps" / "fixtures" / "openapi.yaml"), help="액션 API 명세")
     p.add_argument("--only", nargs="*", help="이 ID의 TC만")
     p.add_argument("--repeat", type=int, default=1, help="TC마다 반복 횟수 (실제 LLM은 답이 매번 달라서)")
@@ -98,13 +99,17 @@ def _setup(args):
         os.environ.setdefault("REPLY_DEADLINE", "900")
         os.environ.setdefault("LLM_TIMEOUT", "90")
 
+    if args.kb:
+        os.environ["KB_DIR"] = str(Path(args.kb).resolve())
     from app import prompt
     if args.knowledge:
         prompt.KNOWLEDGE_DIR = Path(args.knowledge)
     from app import actions
     spec = yaml.safe_load(Path(args.spec).read_text(encoding="utf-8"))
     actions._load_spec = lambda: spec
-    from app import handler  # noqa: F401  (여기서 SYSTEM_PROMPT·TOOLS가 만들어짐)
+    from app import handler  # noqa: F401  (여기서 TOOLS가 만들어짐)
+    # 시스템 프롬프트(규칙 + knowledge + kb 카드)가 만들어지는지 미리 확인 (kb 빌드의 게이트가 이걸 본다)
+    print(f"시스템 프롬프트 {len(prompt.system_prompt()):,}자", file=sys.stderr)
     if args.llm == "gemini":
         _throttle_llm(args.rpm)
         if args.thinking_level:

@@ -1,0 +1,23 @@
+{"type": "meta", "version": 1, "exportedAt": "2037-06-30T05:00:00.000Z", "account": "example", "bots": ["봇A", "봇B"], "counts": {}}
+{"type": "document", "id": "d-rule", "bots": ["봇A"], "fileName": "반품교환규정.docx", "fileType": "DOCX", "kind": "rule", "title": "반품·교환 규정", "code": "RT-2037-02", "effectiveDate": "2037-05-01", "unlocked": false, "chunks": 2}
+{"type": "chunk", "id": "d-rule:0", "documentId": "d-rule", "fileName": "반품교환규정.docx", "location": {"paragraph": 1}, "text": "제3조(접수 기한) 하자 신고는 수령일로부터 5일 이내에 접수한다.", "topics": ["quality"], "code": "RT-2037-02", "effectiveDate": "2037-05-01"}
+{"type": "chunk", "id": "d-rule:1", "documentId": "d-rule", "fileName": "반품교환규정.docx", "location": {"paragraph": 2}, "text": "제4조(환불 수단) 환불은 원결제수단으로만 한다.", "topics": ["payment"], "code": "RT-2037-02", "effectiveDate": "2037-05-01"}
+{"type": "document", "id": "d-rule-pdf", "bots": ["봇B"], "fileName": "반품교환규정.pdf", "fileType": "PDF", "kind": "other", "title": null, "code": null, "effectiveDate": null, "unlocked": false, "chunks": 2}
+{"type": "chunk", "id": "d-rule-pdf:0", "documentId": "d-rule-pdf", "fileName": "반품교환규정.pdf", "location": {"page": 1}, "text": "제3조(접수 기한) 하자 신고는 수령일로부터 5일 이내에  접수한다.", "topics": ["quality"], "code": null, "effectiveDate": null}
+{"type": "chunk", "id": "d-rule-pdf:1", "documentId": "d-rule-pdf", "fileName": "반품교환규정.pdf", "location": {"page": 1}, "text": "제4조(환불 수단) 환불은 원결제수단으로만 한다.", "topics": ["payment"], "code": null, "effectiveDate": null}
+{"type": "document", "id": "d-old", "bots": ["봇A"], "fileName": "old-leaflet.png", "fileType": "PNG", "kind": "capture", "title": null, "code": "RT-2037-01", "effectiveDate": "2037-01-02", "unlocked": false, "chunks": 1}
+{"type": "chunk", "id": "d-old:0", "documentId": "d-old", "fileName": "old-leaflet.png", "location": {"paragraph": 1}, "text": "[그림: 박스 안내문] 하자 신고는 수령일로부터 3일 이내에 해 주세요.", "topics": ["quality"], "code": "RT-2037-01", "effectiveDate": "2037-01-02"}
+{"type": "document", "id": "d-promo", "bots": ["봇B"], "fileName": "banner-01.png", "fileType": "PNG", "kind": "promo", "title": null, "code": null, "effectiveDate": null, "unlocked": false, "chunks": 1}
+{"type": "chunk", "id": "d-promo:0", "documentId": "d-promo", "fileName": "banner-01.png", "location": {"paragraph": 1}, "text": "오늘 주문하면 오늘 출고! 지금 바로 주문하세요", "topics": ["sales"], "code": null, "effectiveDate": null}
+{"type": "document", "id": "d-record", "bots": ["봇A"], "fileName": "출고기록.xlsx", "fileType": "XLSX", "kind": "record", "title": null, "code": null, "effectiveDate": null, "unlocked": false, "chunks": 2}
+{"type": "chunk", "id": "d-record:0", "documentId": "d-record", "fileName": "출고기록.xlsx", "location": {"paragraph": 1}, "text": "요일 | 출고\n월 | 예\n화 | 아니오\n수 | 예", "topics": ["transport"], "code": null, "effectiveDate": null}
+{"type": "chunk", "id": "d-record:1", "documentId": "d-record", "fileName": "출고기록.xlsx", "location": {"paragraph": 2}, "text": "출고는 월·수·금에만 한다.", "topics": ["transport"], "code": null, "effectiveDate": null}
+{"type": "document", "id": "d-capture", "bots": ["봇A"], "fileName": "memo.png", "fileType": "PNG", "kind": "capture", "title": null, "code": null, "effectiveDate": null, "unlocked": false, "chunks": 1}
+{"type": "chunk", "id": "d-capture:0", "documentId": "d-capture", "fileName": "memo.png", "location": {"paragraph": 1}, "text": "제7조(포장) 냉동 상품은 아이스팩 두 개를 넣는다. 이 규정은 7월부터 시행한다.", "topics": ["storage"], "code": null, "effectiveDate": null}
+{"type": "document", "id": "d-empty", "bots": ["봇A"], "fileName": "hello.png", "fileType": "PNG", "kind": "other", "title": null, "code": null, "effectiveDate": null, "unlocked": false, "chunks": 1}
+{"type": "chunk", "id": "d-empty:0", "documentId": "d-empty", "fileName": "hello.png", "location": {"paragraph": 1}, "text": "안녕하세요", "topics": [], "code": null, "effectiveDate": null}
+{"type": "finding", "id": "f1", "bots": ["봇B"], "text": "냉동 상품은 영하 15도를 넘은 상태가 30분 넘게 이어져야 온도 이탈로 본다", "topics": ["storage"], "evidence": {"chunkId": "x", "text": "영하 15도를 넘은 채 30분 넘게 이어져야 이탈로 칩니다"}}
+{"type": "utterance", "id": "u0", "bot": "봇A", "text": "자료: banner-01.png", "at": "2037-06-30T05:00:00.000Z"}
+{"type": "utterance", "id": "u1", "bot": "봇A", "text": "그건 잘 모르겠어요", "at": "2037-06-30T05:00:00.000Z"}
+{"type": "utterance", "id": "u2", "bot": "봇A", "text": "출고는 보통 이틀 걸리고, 당일 출고는 따로 없어요. 주말엔 출고하지 않아요.", "at": "2037-06-30T05:00:00.000Z"}
+{"type": "person", "name": "김담당", "roles": ["배송 담당"], "inRoom": false, "mentionedBy": ["봇A"], "knows": [], "contacts": []}

@@ -1,11 +1,17 @@
-"""시스템 프롬프트 = 답변 규칙 + knowledge/ 전체 내용.
+"""시스템 프롬프트 = 답변 규칙 + knowledge/ 전체 내용 + kb 빌드 카드(knowledge/kb/current).
 
 공개용 요약본입니다. 실제 프롬프트는 대회 문서에서 뽑은 규칙을 담고 있어 공개하지 않았고, 여기엔 구조와 원칙만 남겼습니다.
 """
 
+import logging
+import os
 from pathlib import Path
 
 KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / "knowledge"
+# kb 빌드(build_kb.py)가 회귀 테스트를 통과한 카드를 두는 곳
+KB_DIR = Path(os.getenv("KB_DIR") or KNOWLEDGE_DIR / "kb" / "current")
+
+logger = logging.getLogger("prompt")
 
 RULES = """너는 산지직송 쇼핑몰의 카카오톡 고객 상담 에이전트다. 현재 시각은 케이스 정보의 상담 인입 일시로 본다.
 
@@ -100,5 +106,37 @@ def _load_knowledge():
     return "\n\n".join(parts)
 
 
+def _load_kb():
+    """kb 빌드가 공개한 카드 글(knowledge/kb/current/kb.txt). 없으면 빈 글."""
+    path = KB_DIR / "kb.txt"
+    return path.read_text(encoding="utf-8").strip() if path.exists() else ""
+
+
 def build_system_prompt():
-    return f"{RULES}\n<knowledge>\n{_load_knowledge()}\n</knowledge>"
+    kb = _load_kb()
+    return f"{RULES}\n<knowledge>\n{_load_knowledge()}\n</knowledge>" + (f"\n{kb}" if kb else "")
+
+
+def _kb_stamp():
+    try:
+        stat = (KB_DIR / "version.json").stat()
+        return stat.st_mtime_ns, stat.st_size
+    except OSError:
+        return None
+
+
+_cache = {"stamp": "unset", "prompt": None}
+
+
+def system_prompt():
+    """지금 쓸 시스템 프롬프트. kb 공개본(version.json)이 바뀌면 다시 만든다 — 봇을 재시작하지 않고 새 카드를 읽는다.
+
+    명시적 캐시는 프롬프트 글이 키라서, 바뀐 프롬프트는 새 캐시로 자연스럽게 넘어간다.
+    """
+    stamp = _kb_stamp()
+    if stamp != _cache["stamp"]:
+        _cache["prompt"] = build_system_prompt()
+        if _cache["stamp"] != "unset":
+            logger.info("kb 공개본이 바뀌어 시스템 프롬프트를 다시 만듦 (%d자)", len(_cache["prompt"]))
+        _cache["stamp"] = stamp
+    return _cache["prompt"]
