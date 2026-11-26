@@ -3,6 +3,7 @@
 expect (케이스 전체) 또는 turns[i].expect (그 턴만)에 쓸 수 있는 검사:
   api:          [{tool, args: {필드: 값}, key: 경로변수값, reason_prefix: "[GENERAL"}]  성공(2xx)한 호출 중 모두 맞는 것이 있어야 함
   api_max:      {도구: N}            서버까지 간 호출이 N번 이하 (중복 이관 방지 확인)
+  api_min:      {도구: N}            서버까지 간 호출이 N번 이상 (캐시 비우기 확인)
   no_api:       [도구, ...]          부르면 안 됨
   contains:     [문자열, ...]        답(말풍선들)에 모두 있어야 함
   contains_any: [[a, b], ...]        묶음마다 하나 이상 있어야 함 (예: 날짜 표기 여러 가지)
@@ -51,6 +52,9 @@ def check(expect, replies, calls, scope):
     for tool, n in (expect.get("api_max") or {}).items():
         got = sum(1 for c in calls if c["tool"] == tool)
         results.append((got <= n, f"[{scope}] {tool} {n}번 이하 (실제 {got}번)"))
+    for tool, n in (expect.get("api_min") or {}).items():
+        got = sum(1 for c in calls if c["tool"] == tool)
+        results.append((got >= n, f"[{scope}] {tool} {n}번 이상 (실제 {got}번)"))
     for tool in expect.get("no_api", ()):
         got = sum(1 for c in calls if c["tool"] == tool)
         results.append((got == 0, f"[{scope}] {tool} 부르지 않음 (실제 {got}번)"))

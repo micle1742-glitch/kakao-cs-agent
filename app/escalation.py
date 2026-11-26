@@ -111,13 +111,14 @@ def receipt_sentence(receipt, case_info):
     return f"접수번호는 {receipt}이고, {when} 담당자가 회신드립니다."
 
 
-def _forced_args(why, customer_text):
+def _forced_args(why, customer_text, target=None, priority=None, lane=None):
     tool = next((t for t in actions.TOOLS if t["name"] == TOOL), None)
     props = (tool or {}).get("input_schema", {}).get("properties", {})
     text = " ".join((customer_text or "").split())[:300]
+    target, priority, lane = target or DEFAULT_TARGET, priority or DEFAULT_PRIORITY, lane or DEFAULT_LANE
     values = {
-        "lane": DEFAULT_LANE, "target": DEFAULT_TARGET, "priority": DEFAULT_PRIORITY,
-        "reason": f"[{DEFAULT_TARGET}·{DEFAULT_PRIORITY}] 시스템 자동 이관 — {why}. "
+        "lane": lane, "target": target, "priority": priority,
+        "reason": f"[{target}·{priority}] 시스템 자동 이관 — {why}. "
                   f"확인된 사실: 고객 문의 접수. 미확인: 처리 가능 여부. 고객 문의: {text}",
         "summary": text[:200],
     }
@@ -126,11 +127,14 @@ def _forced_args(why, customer_text):
     return {k: values[k] for k in keys}
 
 
-async def force(user_key, tc_id, why, customer_text):
-    """시스템이 이관을 접수하고 접수번호를 반환. 이관 도구가 없거나 실패하면 None."""
+async def force(user_key, tc_id, why, customer_text, target=None, priority=None, lane=None):
+    """시스템이 이관을 접수하고 접수번호를 반환. 이관 도구가 없거나 실패하면 None.
+
+    target·priority·lane을 주지 않으면 기본값(판단이 서지 않을 때의 대상).
+    """
     if not tc_id or TOOL not in actions._operations:
         return None
-    args = _forced_args(why, customer_text)
+    args = _forced_args(why, customer_text, target, priority, lane)
     result = previous(TOOL, args, tc_id) or await actions.execute(TOOL, args, tc_id)
     store.record_tool_call(user_key, tc_id, TOOL, args, result)
     receipt = receipt_of(result)

@@ -31,6 +31,7 @@ def _load(p, mtime):
         "acknowledge": data.get("acknowledge") or "'{loser_value}'({loser_label})는 인정하되, 처리는 '{winner_value}'({winner_label}) 기준입니다.",
         "bases": bases, "default_basis": data.get("default_basis") or bases[-1],
         "topics": data.get("topics") or {}, "forbidden": data.get("forbidden") or [],
+        "crisis": data.get("crisis") or {}, "phishing": data.get("phishing") or {},
     }
 
 

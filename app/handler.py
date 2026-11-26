@@ -6,7 +6,7 @@ import os
 import re
 import time
 
-from app import actions, case, case_state, escalation, kakao, llm, media, prompt, store
+from app import actions, case, case_state, crisis, escalation, kakao, llm, media, postcheck, prompt, store
 
 logger = logging.getLogger("handler")
 
@@ -41,6 +41,16 @@ def _plain(text):
     text = text.replace("**", "")
     text = re.sub(r"^\s*#+\s*", "", text, flags=re.MULTILINE)
     return text.strip()
+
+
+LOOKUP_NOTE = ("[시스템] 조회 결과 없이 '없음·불가'로 결론 내지 않는다. 인입 계정이나 고객이 준 번호로 필요한 조회 도구를 "
+               "먼저 부른 뒤, 그 결과로 다시 답한다.")
+NO_LOOKUP_REPLY = "조회로 확인되기 전이라 없다고 단정하지 않겠습니다. 담당자에게 확인을 넘겨 두었습니다."
+
+
+def _get_tools():
+    """조회(GET) 도구 이름 — '없음·불가' 결론 전에 하나라도 불렀는지 본다."""
+    return {name for name, op in actions._operations.items() if op["method"] == "GET"}
 
 
 def _context(case_info, history):
@@ -86,27 +96,56 @@ async def _answer(user_key, history, message, case_info, timeout, trace):
                                                customer_text=customer_text, why=why,
                                                this_turn=forced.get("receipt") or this_turn_receipt())
 
-    try:
-        reply = await asyncio.wait_for(
+    # 1. 위기 신호는 LLM보다 먼저 코드가 본다 (애매하면 위기). 위기면 흐름을 고정한다
+    kind = crisis.classify(customer_text)
+    if kind == crisis.CRISIS:
+        logger.warning("위기 신호 — 고정 응대와 안전 이관")
+        await escalation.force(user_key, tc_id, "위기 신호", customer_text, **crisis.escalation_args())
+        return crisis.reply(history)
+    context = _context(case_info, history)
+    if kind == crisis.HEALTH and context:
+        context += "\n(코드 판단: 이번 문의는 몸 이상 문의이며 위기 신호가 아니다. 상담 자원 안내를 하지 않는다.)"
+
+    started = time.perf_counter()
+    budget = max(timeout - ESCALATION_RESERVE, 1)
+
+    async def generate(msgs):
+        return await asyncio.wait_for(
             llm.generate(
-                messages,
+                msgs,
                 system=prompt.system_prompt(),  # kb 공개본이 바뀌면 새 카드로
-                context=_context(case_info, history),
+                context=context,
                 tools=TOOLS,
                 tool_executor=tool_executor if TOOLS else None,
                 trace=trace,
                 on_round_cap=on_round_cap if TOOLS else None,
             ),
-            timeout=max(timeout - ESCALATION_RESERVE, 1),
+            timeout=max(budget - (time.perf_counter() - started), 1),
         )
+
+    try:
+        reply = await generate(messages)
+        # 2. '없음·불가' 결론인데 조회가 한 번도 없으면 한 번 다시 시킨다
+        if reply and TOOLS and postcheck.needs_lookup(reply, tc_id, _get_tools()):
+            logger.warning("조회 없이 '없음·불가'로 답함 — 조회하고 다시 답하게 함")
+            reply = await generate(messages + [{"role": "user", "content": LOOKUP_NOTE}])
+            if reply and postcheck.needs_lookup(reply, tc_id, _get_tools()):
+                receipt = this_turn_receipt() or await escalation.force(
+                    user_key, tc_id, "조회 없이 '없음·불가'로 답하려 함", customer_text)
+                reply = NO_LOOKUP_REPLY + (f" {escalation.receipt_sentence(receipt, case_info)}" if receipt else "")
     except asyncio.TimeoutError:
         logger.warning("답변 생성 시간(수신부터 %.0f초) 초과, 이관을 남기고 답장", REPLY_DEADLINE)
         return await fallback("답변 생성 시간 초과")
     if not reply:
         return await fallback("답변 생성 실패")
-    return await escalation.ensure(_plain(reply), user_key=user_key, tc_id=tc_id, case_info=case_info,
-                                   customer_text=customer_text, forced_receipt=forced.get("receipt"),
-                                   this_turn=this_turn_receipt())
+
+    # 3. 사후 검사 → 이관 보장 → 길이 맞추기 (고칠 때 LLM을 다시 부르지 않음)
+    reply, _ = postcheck.review(_plain(reply), customer_text=customer_text, evidence=postcheck.evidence_text(
+        tc_id, history, customer_text, case_info, prompt.system_prompt()))
+    reply = await escalation.ensure(reply, user_key=user_key, tc_id=tc_id, case_info=case_info,
+                                    customer_text=customer_text, forced_receipt=forced.get("receipt"),
+                                    this_turn=this_turn_receipt())
+    return postcheck.fit(reply)
 
 
 async def _user_message(text):

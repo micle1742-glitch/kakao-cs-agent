@@ -1,0 +1,20 @@
+# 지어낸 예시입니다 (가상 고객·주문). 대회 실제 내용 없음.
+id: DEMO-19
+title: 조회 없이 '주문 없음'으로 끝내지 않음 — 코드가 한 번 다시 시키면 조회하고 답함
+tags: [조회]
+case: {received_at: "2037-06-30(화) 10:00", account: "회원 로그인 · 탁예시 · 010-0000-0019"}
+api_fixtures:
+  API_01: {"*": [{member_id: M-0019, name: 탁예시}]}
+  API_02: {"M-0019": []}
+turns:
+  - customer: 어제 결제 문자가 왔는데 주문 내역에 아무것도 없어요
+    expect:
+      api: [{tool: API_02}]
+llm_script:
+  # 1턴: 조회 없이 '없습니다' → 코드가 한 번 다시 시킴 → 이번엔 조회하고 답함
+  - text: 주문 내역이 없습니다.
+  - call: [{name: API_01, args: {name: 탁예시}}]
+  - call: [{name: API_02, args: {member_id: M-0019}}]
+  - text: 계정으로 조회해 보니 이 계정의 주문은 아직 잡혀 있지 않아요. 결제 승인 내역과 맞춰 보도록 확인해 드릴게요.
+expect:
+  api_min: {API_02: 1}

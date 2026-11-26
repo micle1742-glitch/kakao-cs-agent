@@ -4,7 +4,7 @@
 - 헤더: Authorization: Bearer {ACTION_TOKEN}, X-Aitop100-Test-Case-Id: {TC ID}
 - TC ID(case metadata의 id, handler가 넘김)가 없으면 API를 부르지 않고 로그만 남긴다.
 - 429는 Retry-After만큼, 500/503은 1초 기다린 뒤 1회 재시도.
-- 같은 TC 안의 같은 GET 요청은 캐시해서 다시 부르지 않는다 (평가 누적 한도 3,000회).
+- 같은 TC 안의 같은 GET 요청은 캐시해서 다시 부르지 않는다 (평가 누적 한도 3,000회). 접수(상태 변경)가 성공하면 그 TC의 캐시를 비운다.
 - 모든 호출은 메서드·경로·상태코드·걸린 시간과 누적 호출 수를 로그와 api_usage.log에 남긴다.
 """
 
@@ -141,6 +141,9 @@ async def request(method, path, tc_id, params=None, body=None):
         _get_cache[cache_key] = result
     if submit_key and response.is_success:
         store.save_submission(json.dumps(submit_key, ensure_ascii=False), result)
+        # 상태가 바뀌었으니 이 TC의 조회 캐시를 비운다 (배송지 변경 뒤 옛 배송 정보를 안내하지 않게)
+        for key in [k for k in _get_cache if k[0] == tc_id]:
+            del _get_cache[key]
     return result
 
 
